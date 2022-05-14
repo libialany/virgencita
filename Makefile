@@ -19,3 +19,7 @@ clean:
 .PHONY: container
 container:
 	@docker build -t virgencita .
+
+.PHONY: container_compose
+container_compose:
+	@docker-compose up

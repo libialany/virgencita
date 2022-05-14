@@ -2,3 +2,4 @@
 static/index.html
 *.mmdb
 virgencita.sqlite
+.env

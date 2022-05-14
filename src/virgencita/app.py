@@ -2,34 +2,42 @@ from flask import Flask, render_template, request, url_for
 import sys
 import requests
 import requests_cache
-import geoip2.database
 import logging
 import random
 import os
-
+from geopy.geocoders import Nominatim
 requests_cache.install_cache('virgencita', expire_after=1800)
-
-reader = geoip2.database.Reader('geo.mmdb')
-
 
 def getLocation(client_ip):
     try:
-        client_response = reader.city(client_ip)
-        lat = str(round(client_response.location.latitude, 2))
-        lon = str(round(client_response.location.longitude, 2))
+        API_KEY_LOCATION=os.getenv('FORECAST_API_KEY_LOCATION')
+        url=f'http://api.ipstack.com/{client_ip}?access_key={API_KEY_LOCATION}'
+        headers={
+        'accept':"application/json",
+        'content-type':"application/json"
+        }
+        response= requests.request("GET",url,headers=headers)
+        respond= response.json()     
+        lat = round(respond['latitude']*1000+0.5)/1000
+        lon = round(respond['longitude']*1000+0.5)/1000        
+
+
     except BaseException:
         lat = '-34.6037'
         lon = '-58.3816'
         pass
-    print('Lat/Lon: ' + lat + ', ' + lon, file=sys.stdout)
+    print('Lat/Lon: ' + str(lat) + ', ' + str(lon), file=sys.stdout)
     sys.stdout.flush()
     return(lat, lon)
 
 
-def getCity(client_ip):
+def getCity(coords):
     try:
-        client_response = reader.city(client_ip)
-        city = str(client_response.city.name)
+        geolocator = Nominatim(user_agent="getcoldinLaPaz")
+        location = geolocator.reverse(f"{coords[0]}, {coords[1]}")
+        info=location.raw['address']
+        city = info['city']
+        district= info['city_district']  
     except BaseException:
         city = 'Buenos Aires'
         pass
@@ -38,44 +46,26 @@ def getCity(client_ip):
     return(city)
 
 
-def getApiKey():
-    return(os.environ['FORECAST_API_KEY_1'])
 
 
-def getAnalyticsKey():
-    try:
-         analytics_key = os.environ['FORECAST_ANALYTICS_KEY']
-    except BaseException:
-         analytics_key = ''
-    return(analytics_key)
-
-
-def getForecast(client_ip):
-    coords = getLocation(client_ip)
-    r = requests.get('https://api.darksky.net/forecast/%s/%s,%s' %
-                     (getApiKey(), coords[0], coords[1]))
-    print('Is cached: ' + str(r.from_cache) + '\n', file=sys.stdout)
+def getForecast(coords):
+    API_KEY_WEATHER=os.getenv('FORECAST_API_KEY_WEATHER')
+    r = requests.get(f'https://api.openweathermap.org/data/2.5/weather?lat={coords[0]}&lon={coords[1]}&appid={API_KEY_WEATHER}')
+    #print('Is cached: ' + str(r.from_cache) + '\n', file=sys.stdout)
     sys.stdout.flush()
     data = r.json()
     return(data)
 
 
 def getHumidity(forecast):
-    humidity = int(forecast['currently']['humidity']*100)
-    precipP = int(forecast['currently']['precipProbability']*100)
-    if precipP > 30:
-      total = precipP + (humidity/2)
-      if total <= 100:
-        return(total)
-      else:
-        return(100)
-    else:
-      return((humidity+precipP)/2)
+    humidity = forecast['main']['humidity']
+    # OpenWeather free has no Precipitation
+    return humidity
 
 
 def createApp():
     app = Flask(__name__)
-    app.logger.disabled = True
+    app.logger.disabled = False
     log = logging.getLogger('werkzeug')
     log.disabled = True
     @app.route('/')
@@ -83,9 +73,7 @@ def createApp():
         client_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
         print('Client IP: ' + str(client_ip), file=sys.stdout)
         sys.stdout.flush()
-        forecast = getForecast(client_ip)
-        return render_template("index.html", analytics_id=getAnalyticsKey(),
-                               probability=getHumidity(forecast),
-                               geocity=getCity(client_ip))
-
+        coords = getLocation(client_ip)
+        forecast = getForecast(coords)
+        return render_template("index.html",probability=getHumidity(forecast),geocity=getCity(coords))
     return app

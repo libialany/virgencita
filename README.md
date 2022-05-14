@@ -2,24 +2,40 @@
 
 [![Build Status](https://travis-ci.org/reynico/virgencita.svg?branch=master)](https://travis-ci.org/reynico/virgencita)
 
+__Note__  I just made some modifications to make it work.
+
 ### Setup
-- Download [GeoIP city location database](https://dev.maxmind.com/geoip/geoip2/geolite2/)
-- Uncompress and rename to `geo.mmdb`
-- Set your `FORECAST_API_KEY_1`. Create an account at [DarkSky](https://darksky.net/)
-- Set your `FORECAST_ANALYTICS_KEY` to have metrics at Google Analytics
+- <del> Download [GeoIP city location database](https://dev.maxmind.com/geoip/geoip2/geolite2/)</del>
+- <del>Uncompress and rename to `geo.mmdb`</del>
+### Manually
+
+- Set in terminal with  `export FORECAST_API_KEY_LOCATION
+=...`
+
+- Set in terminal with `export FORECAST_API_KEY_LOCATION
+=...`
+
+
 - Install the Python requirements `make install`
-- Run with `python3 main.py`
+- Run with `python3 ./src/main.py`
 
-### How to test locally
-Requires 18.02.0+
-- Edit `docker-compose.yml` with your keys
-```
-docker-compose build
-docker-compose up
-```
+### Dockerfile
 
-### Running unit tests
-- Run `make test`
+- Set your `FORECAST_API_KEY_WEATHER`. Create an .env file.
+- Set your `FORECAST_API_KEY_LOCATION`. Create an .env file.
 
-### Run lint
-- Run `make lint`
+## How to test locally
+
+<del> Requires 18.02.0+</del>
+ 
+`docker-compose up` 
+
+<h2> Running unit tests </h2>
+
+- <del> Run `make test`</del>
+
+<h2> Run lint </h2>
+
+- <del> Run `make lint` </del>
+
+
